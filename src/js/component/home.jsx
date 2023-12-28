@@ -12,6 +12,7 @@ const Home = () => {
 		{ "label": "Do the replits", "done": false }
 	]);
 
+	/*Initialize the tasks list*/
 	useEffect(() => {
 		fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa', {
 			method: 'POST',
@@ -25,8 +26,7 @@ const Home = () => {
 			.catch(err => err)
 	})
 
-
-
+	/*Updates the tasks list on the API*/
 	useEffect(() => {
 		fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa', {
 			method: 'PUT',
@@ -40,16 +40,20 @@ const Home = () => {
 			.catch(err => err)
 	}, []);
 
-	useEffect(() => {
+	/* Fetch the tasks list from the API and updates the local list state */
+	
+	/* Si saco el useEffect se renderiza todo el tiempo pero asi logro que se actualice "list" por fuera de "enterPressed" por si demora el fetch en actualizar*/
+	/*useEffect(() => {*/
 		fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa')
 			.then(response => response.json())
 			.then((data) => setList(data.map(item => item.label)))
 			.catch(err => err)
-	}, []);
+	/*}, []);*/
+	
 
 	const enterPressed = (e) => {
 		if (e.key === "Enter") {
-			let newTask = {"label": inputValue, "done" : false};
+			let newTask = { "label": inputValue, "done": false };
 			setTasksListApi([newTask, ...tasksListApi])
 			console.log(tasksListApi)
 			fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa', {
@@ -62,7 +66,15 @@ const Home = () => {
 				.then(response => response.json())
 				.then((data) => console.log(data))
 				.catch(err => err)
-			setList(list.concat([inputValue]));
+			/* A veces funciona y a veces no, si demora en actualizarse recien en el segundo enter se carga en la lista*/
+			/*fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa')
+				.then(response => response.json())
+				.then((data) => setList(data.map(item => item.label)))
+				.catch(err => err)
+			*/
+			/* Así es como mejor funciona pero no estaría usando la API no?
+			setList(list.concat([inputValue])); 
+			*/
 			setInputValue("")
 		}
 	}
@@ -74,7 +86,7 @@ const Home = () => {
 				return task
 			}
 		})
-		setList(listWithoutTask)
+		
 	}
 
 	return (
