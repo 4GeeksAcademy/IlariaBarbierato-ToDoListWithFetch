@@ -7,9 +7,7 @@ const Home = () => {
 	const [list, setList] = useState([]);
 	const [taskHover, setTaskHover] = useState(null);
 	const [tasksListApi, setTasksListApi] = useState([
-		{ "label": "Make the bed", "done": false },
-		{ "label": "Walk the dog", "done": false },
-		{ "label": "Do the replits", "done": false }
+		{ "label": "No tasks, add a task", "done": false }
 	]);
 
 	/*Initialize the tasks list*/
@@ -29,43 +27,71 @@ const Home = () => {
 	/*Updates the tasks list on the API*/
 	useEffect(() => {
 		fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa', {
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json',
-			},
+			method: "PUT",
 			body: JSON.stringify(tasksListApi),
+			headers: {
+				"Content-Type": "application/json"
+			}
 		})
-			.then(response => response.json())
-			.then((data) => console.log(data))
-			.catch(err => err)
+			.then(resp => {
+				console.log(resp.ok); // Will be true if the response is successful
+				console.log(resp.status); // The status code=200 or code=400 etc.
+				console.log(resp.text()); // Will try to return the exact result as a string
+				return resp.json(); // (returns promise) Will try to parse the result as JSON and return a promise that you can .then for results
+			})
+			.then(data => {
+				// Here is where your code should start after the fetch finishes
+				console.log(data); // This will print on the console the exact object received from the server
+			})
+			.catch(error => {
+				// Error handling
+				console.log(error);
+			});
 	}, []);
 
 	/* Fetch the tasks list from the API and updates the local list state */
-	
 	/* Si saco el useEffect se renderiza todo el tiempo pero asi logro que se actualice "list" por fuera de "enterPressed" por si demora el fetch en actualizar*/
 	/*useEffect(() => {*/
-		fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa')
-			.then(response => response.json())
-			.then((data) => setList(data.map(item => item.label)))
-			.catch(err => err)
+	fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa')
+		.then(response => response.json())
+		.then((data) => setList(data.map(item => item.label)))
+		.catch(err => err)
 	/*}, []);*/
-	
+
 
 	const enterPressed = (e) => {
 		if (e.key === "Enter") {
 			let newTask = { "label": inputValue, "done": false };
-			setTasksListApi([newTask, ...tasksListApi])
-			console.log(tasksListApi)
-			fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa', {
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify([newTask, ...tasksListApi]),
-			})
-				.then(response => response.json())
-				.then((data) => console.log(data))
-				.catch(err => err)
+
+			if (list.length === 1 && tasksListApi[0].label === "No tasks, add a task") {
+				setTasksListApi([newTask])
+				
+				fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa', {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify([newTask]),
+				})
+					.then(response => response.json())
+					.then((data) => console.log(data))
+					.catch(err => err)
+			}
+			else {
+				setTasksListApi([newTask, ...tasksListApi])
+
+				fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa', {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify([newTask, ...tasksListApi]),
+				})
+					.then(response => response.json())
+					.then((data) => console.log(data))
+					.catch(err => err)
+			}
+
 			/* A veces funciona y a veces no, si demora en actualizarse recien en el segundo enter se carga en la lista*/
 			/*fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa')
 				.then(response => response.json())
@@ -86,7 +112,48 @@ const Home = () => {
 				return task
 			}
 		})
-		
+		/*We can't send an empty array into the API*/
+		let tasksListModified = [];
+		if (list.length === 1) {
+			tasksListModified = [{ "label": "No tasks, add a task", "done": false }];
+		} else {
+			listWithoutTask.map((task, index) => {
+				let newTask = { "label": task, "done": false };
+				tasksListModified.push(newTask);
+			});
+		}
+
+		console.log(tasksListModified)
+
+		setTasksListApi(tasksListModified);
+
+		fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa', {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(tasksListModified),
+		})
+			.then(response => response.json())
+			.then((data) => console.log(data))
+			.catch(err => err)
+	}
+
+	const deleteAll = () => {
+		let emptyTaskList = [{ "label": "No tasks, add a task", "done": false }]
+		setTasksListApi(emptyTaskList);
+		fetch('https://playground.4geeks.com/apis/fake/todos/user/IlariaBa', {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(emptyTaskList),
+		})
+			.then(response => response.json())
+			.then((data) => console.log(data))
+			.catch(err => err)
+		console.log(emptyTaskList)
+		console.log(tasksListApi)
 	}
 
 	return (
@@ -101,9 +168,17 @@ const Home = () => {
 							{taskHover === index ? <button className="redDeleteButton" onClick={() => deleteTask(index)}> x </button> : ""}
 						</li>
 					)}
-					{list.length === 0 ? <li className="list-group-item ps-5 noTasks">No tasks, add a task</li> : ""}
-					<li className="list-group-item fontSizeSmall">{list.length} item left</li>
+					{list.length === 1 && tasksListApi[0].label === "No tasks, add a task" ?
+						<li className="list-group-item fontSizeSmall">0 item left</li>
+						:
+						<li className="list-group-item fontSizeSmall">{list.length} item left</li>
+					}
 				</ul>
+			</div>
+			<div className="d-grid mt-2">
+				<button className="btn btn-danger" type="button" onClick={() => deleteAll()}>
+					Delete all
+				</button>
 			</div>
 		</div>
 	);
